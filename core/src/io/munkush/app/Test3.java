@@ -23,7 +23,15 @@ public class Test3 {
     public Test3(){
         targetFruit = new Texture("apple.png");
         otherFruits = new ArrayList<>();
-        setFruits();
+        initFruits();
+    }
+
+    private void initFruits() {
+        targetFruit = new Texture(FruitUtil.getRandomFruit());
+
+        otherFruits = new ArrayList<>();
+
+        FruitUtil.setFruitsForName(targetFruit.toString(), otherFruits);
     }
 
 
@@ -50,21 +58,23 @@ public class Test3 {
             isFruitsShuffled = true;
         }
 
-        if (collectedFruits.size() == 7) {
+        // Check if all collected fruits are apples
+        if (collectedFruits.size() == 5) {
             boolean allApples = true;
 
             for (Texture texture : collectedFruits) {
                 String textureName = texture.toString();
-                if (!textureName.equals("apple.png")) {
+                if (!textureName.equals(targetFruit.toString())) {
                     countOfFalseAnswer++;
                     allApples = false;
-                    collectedFruits.clear();
-                    isFruitsShuffled = false;
                     otherFruits.clear();
-                    setFruits();
+                    collectedFruits.clear();
+                    initFruits();
+                    isFruitsShuffled = false;
                     break;
                 }
             }
+
             if (allApples) {
                 isFruitsShuffled = false;
                 testCount = 4;
@@ -74,25 +84,22 @@ public class Test3 {
             }
         }
 
-
         float textureWidth = containerWidth / 7;
         float textureHeight = containerHeight / 7;
 
         batch.begin();
-
-        for (int row = 0; row < 4; row++) {
+        for (int row = 0; row < 5; row++) {
             for (int col = 0; col < 7; col++) {
                 int index = row * 7 + col;
                 if (index < otherFruits.size()) {
                     Texture texture = otherFruits.get(index);
                     float textureX = containerX + col * textureWidth;
-                    float textureY = containerY + row * textureHeight + 10;
-                    batch.draw(texture, textureX + 50, textureY, 51, 51);
+                    float textureY = containerY + row * (textureHeight - 30);
+                    batch.draw(texture, textureX + 38, textureY + 5, textureWidth - 80, textureHeight - 80);
                 }
             }
         }
 
-        // Draw targetFruit texture at the center on top of the horizontal line
         float targetFruitX = containerX + (containerWidth - textureWidth) / 2;
         float targetFruitY = lineY + containerHeight / 2;
         batch.draw(targetFruit, targetFruitX, targetFruitY - 300, textureWidth, textureHeight);
@@ -102,23 +109,33 @@ public class Test3 {
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        // Handle touch input
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             float touchX = Gdx.input.getX();
             float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
-            int touchedFruitIndex = (int) ((touchX - containerX) / textureWidth);
-            int rowIndex = (int) ((touchY - containerY) / (textureHeight + 10));
+            // Проверяем, что нажатие произошло в пределах контейнера
+            if (touchX >= containerX && touchX <= containerX + containerWidth &&
+                    touchY >= containerY && touchY <= containerY + containerHeight) {
 
-            int indexToRemove = rowIndex * 7 + touchedFruitIndex;
-            if (indexToRemove >= 0 && indexToRemove < otherFruits.size()) {
-                Texture removedTexture = otherFruits.remove(indexToRemove);
-                collectedFruits.add(removedTexture);
+                // Преобразуем координаты нажатия в локальные координаты контейнера
+                float localTouchX = touchX - containerX;
+                float localTouchY = touchY - containerY;
+
+                // Находим индекс фрукта по локальным координатам
+                int colIndex = (int) (localTouchX / textureWidth);
+                int rowIndex = (int) (localTouchY / (textureHeight - 30)); // Учитываем смещение по вертикали
+                int index = rowIndex * 7 + colIndex;
+
+                // Если индекс корректен и фрукт существует, удаляем его из otherFruits
+                if (index >= 0 && index < otherFruits.size()) {
+                    Texture removedTexture = otherFruits.remove(index);
+                    collectedFruits.add(removedTexture);
+                }
             }
-
         }
 
     }
+
 
     public void dispose(){
         for(Texture texture : otherFruits){
