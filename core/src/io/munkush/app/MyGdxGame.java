@@ -24,6 +24,10 @@ public class MyGdxGame extends ApplicationAdapter {
     Texture image2Texture;
     Texture image3Texture;
 
+    List<Texture> listOfRep;
+    Texture rep;
+
+    boolean isRepShuffled = false;
     SpriteBatch batch;
     ShapeRenderer shapeRenderer;
 
@@ -41,6 +45,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
     @Override
     public void create() {
+
         containerWidth = Gdx.graphics.getWidth() - 800;
         containerHeight = Gdx.graphics.getHeight() - 200;
         containerX = (Gdx.graphics.getWidth() - containerWidth) / 2;
@@ -55,8 +60,9 @@ public class MyGdxGame extends ApplicationAdapter {
         image3Texture = new Texture("right2.png");
 
 
-        targetFruit = new Texture("apple.png");
+        setPersons();
 
+        targetFruit = new Texture("apple.png");
         otherFruits = new ArrayList<>();
 
         setFruits();
@@ -67,6 +73,14 @@ public class MyGdxGame extends ApplicationAdapter {
             numberTextures.add(new Texture(i + ".png"));
         }
         setupUI();
+    }
+
+    private void setPersons() {
+        listOfRep = new ArrayList<>();
+        rep = new Texture("b1.png");
+        for(int i = 0; i < 6; i++){
+            listOfRep.add(new Texture("b" + (i+2) + ".png"));
+        }
     }
 
     private void setupUI() {
@@ -91,6 +105,10 @@ public class MyGdxGame extends ApplicationAdapter {
             doTest2();
         } else if(isTesting && testCount == 3){
             doTest3();
+        } else if(isTesting && testCount == 4){
+            doTest4();
+        } else if(isTesting && testCount == 5){
+            doTest5();
         }
 
         else {
@@ -118,19 +136,108 @@ public class MyGdxGame extends ApplicationAdapter {
         }
     }
 
+    private void doTest5() {
+        setDefault();
+    }
+
+    private final List<Texture> collectedRep = new ArrayList<>();
+
+    private void doTest4() {
+        setDefault();
+
+        if (collectedRep.size() == 6) {
+            boolean isCorrect = true;
+            int i = 2;
+            for (Texture texture : collectedRep) {
+                if (!texture.toString().equals("b" + i++ + ".png")) {
+                    isCorrect = false;
+                    isRepShuffled = false;
+                    collectedRep.clear();
+                    listOfRep.clear();
+                    setPersons();
+                    break; // Выход из цикла после очистки списка
+                }
+            }
+
+            if (isCorrect) {
+                testCount = 5;
+                isRepShuffled = false;
+                collectedRep.clear();
+                listOfRep.clear();
+                setPersons();
+            }
+        }
+
+        if (!isRepShuffled) {
+            Collections.shuffle(listOfRep);
+            isRepShuffled = true;
+        }
+
+        batch.begin();
+        batch.draw(rep, containerX, containerY + containerHeight / 2 + 100, 120, 170);
+        batch.end();
+
+        float characterWidth = 186.5f; // Фиксированная ширина текстур персонажей
+        float textureHeight = containerHeight / 8; // Выберите подходящую высоту
+
+        batch.begin();
+
+        // Отобразить текстуры списка listOfRep внизу горизонтальной линии
+        for (int i = 0; i < listOfRep.size(); i++) {
+            Texture texture = listOfRep.get(i);
+            float textureX = containerX + i * characterWidth; // Используйте фиксированную ширину
+            float textureY = containerY;
+            batch.draw(texture, textureX, textureY, characterWidth, textureHeight + 100);
+        }
+
+        // Создать временную копию collectedRep для итерации
+        List<Texture> tempCollectedRep = new ArrayList<>(collectedRep);
+
+        // Отобразить выбранные текстуры наверху
+        for (int i = 0; i < tempCollectedRep.size(); i++) {
+            Texture texture = tempCollectedRep.get(i);
+            float textureX = containerX + i * characterWidth + 120; // Новая позиция X
+            float textureY = containerY + containerHeight / 2 + 100; // Новая позиция Y
+            batch.draw(texture, textureX, textureY, characterWidth, textureHeight + 60); // Используйте фиксированную ширину
+        }
+
+        batch.end();
+
+        // Обработка нажатия на персонажей внизу горизонтальной линии
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float touchX = Gdx.input.getX();
+            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            // Проверяем, что нажатие было в области текстур внизу
+            if (touchY >= containerY && touchY <= containerY + textureHeight + 100) {
+                int touchedCharacterIndex = (int) ((touchX - containerX) / characterWidth);
+                if (touchedCharacterIndex >= 0 && touchedCharacterIndex < listOfRep.size()) {
+                    Texture selectedCharacter = listOfRep.remove(touchedCharacterIndex);
+                    collectedRep.add(selectedCharacter); // Добавляем выбранного персонажа в список
+                }
+            }
+        }
+    }
+
+
+
+
+
+    private void setDefault() {
+        setBackgroundImage();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0, 0, 0, 1);
+        setContainer();
+    }
+
     private final ArrayList<Texture> collectedTextures = new ArrayList<>(); // Список для сохранения порядка нажатий
 
 
     private final List<Texture> collectedFruits = new ArrayList<>(); // List to store collected fruit textures
 
     private void doTest3() {
-        setBackgroundImage();
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 1);
-
-        setContainer();
+        setDefault();
 
         if (!isFruitsShuffled) {
             Collections.shuffle(otherFruits);
@@ -227,11 +334,7 @@ public class MyGdxGame extends ApplicationAdapter {
     }
 
     private void doTest2() {
-        setBackgroundImage();
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 1);
-        setContainer();
+        setDefault();
 
 
 
@@ -337,14 +440,7 @@ public class MyGdxGame extends ApplicationAdapter {
         batch.end();
     }
     public void doTest1(){
-        setBackgroundImage();
-
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 1);
-
-        setContainer();
+        setDefault();
 
         float containerWidth = Gdx.graphics.getWidth() - 800;
         float containerHeight = Gdx.graphics.getHeight() - 200;
