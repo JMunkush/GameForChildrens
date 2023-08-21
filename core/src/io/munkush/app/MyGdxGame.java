@@ -2,6 +2,7 @@ package io.munkush.app;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -9,9 +10,14 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 
-
+import java.util.*;
 
 public class MyGdxGame extends ApplicationAdapter {
+    float containerWidth;
+    float containerHeight;
+    float containerX;
+    float containerY;
+    float lineY = containerY + containerHeight / 2;
     Texture backgroundTexture;
     Texture startButtonTexture;
     Texture image1Texture;
@@ -21,6 +27,10 @@ public class MyGdxGame extends ApplicationAdapter {
     SpriteBatch batch;
     ShapeRenderer shapeRenderer;
 
+    List<Texture> numberTextures;
+
+
+    boolean isShuffled = false;
     int countOfTrueAnswer = 0;
 
     int testCount = 0;
@@ -28,6 +38,11 @@ public class MyGdxGame extends ApplicationAdapter {
 
     @Override
     public void create() {
+        containerWidth = Gdx.graphics.getWidth() - 800;
+        containerHeight = Gdx.graphics.getHeight() - 200;
+        containerX = (Gdx.graphics.getWidth() - containerWidth) / 2;
+        containerY = (Gdx.graphics.getHeight() - containerHeight) / 2;
+        lineY = containerY + containerHeight / 2;
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
         backgroundTexture = new Texture("background.jpg");
@@ -36,9 +51,12 @@ public class MyGdxGame extends ApplicationAdapter {
         image2Texture = new Texture("right1.png");
         image3Texture = new Texture("right2.png");
 
-        backgroundTexture = new Texture("background.jpg");
-        startButtonTexture = new Texture("start.png");
 
+        numberTextures = new ArrayList<>();
+
+        for (int i = 1; i <= 10; i++) {
+            numberTextures.add(new Texture(i + ".png"));
+        }
         setupUI();
     }
 
@@ -89,22 +107,87 @@ public class MyGdxGame extends ApplicationAdapter {
         }
     }
 
+    private final ArrayList<Texture> collectedTextures = new ArrayList<>(); // Список для сохранения порядка нажатий
+
     private void doTest2() {
+        setBackgroundImage();
+
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 1);
-        setBackgroundImage();
+
         setContainer();
 
+        if(collectedTextures.size() == 10){
+            boolean isCorrect = true;
+            int counter = 1;
+            for (Texture texture : collectedTextures){
+                int i = Integer.parseInt(texture.toString().replace(".png", ""));
+                System.out.println(counter +":" + i);
+                if(i != counter){
+                    System.out.println("false"+collectedTextures);
+                    collectedTextures.clear();
+                    isShuffled = false;
+                    isCorrect = false;
+                    break;
+                }
+                counter++;
+            }
+            if(isCorrect){
+                System.out.println("true"+collectedTextures);
+                testCount = 3;
+            }
+        }
+
+        float numberSpacing = containerWidth / 10;
+
+        if(!isShuffled){
+            Collections.shuffle(numberTextures);
+            isShuffled = true;
+        }
+        // Отображение цифр внизу горизонтальной линии
+        batch.begin();
+        for (int i = 1; i <= 10; i++) {
+            batch.draw(numberTextures.get(i - 1), containerX + (i - 1) * numberSpacing, containerY + 50, 51, 51);
+        }
+        batch.end();
+
+        // Обработка нажатий только в области цифр
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float touchX = Gdx.input.getX();
+            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            if (touchY >= containerY + 50 && touchY <= containerY + 100) {
+                int touchedNumberIndex = (int) ((touchX - containerX) / numberSpacing);
+                if (touchedNumberIndex >= 0 && touchedNumberIndex < 10) {
+                    Texture touchedTexture = numberTextures.get(touchedNumberIndex);
+                    if (!collectedTextures.contains(touchedTexture)) {
+                        collectedTextures.add(touchedTexture);
+                    }
+                }
+            }
+        }
+
+        if (collectedTextures.size() == 10) {
+            System.out.println("Collected textures: " + collectedTextures);
+        }
+        // Отображение собранных цифр сверху горизонтальной линии
+        batch.begin();
+        float offsetX = containerX;
+        for (Texture collectedTexture : collectedTextures) {
+            batch.draw(collectedTexture, offsetX, lineY + 50, 51, 51);
+            offsetX += numberSpacing;
+        }
+        batch.end();
 
     }
 
+
+
+
+
+
     private void setContainer() {
-        float containerWidth = Gdx.graphics.getWidth() - 800;
-        float containerHeight = Gdx.graphics.getHeight() - 200;
-        float containerX = (Gdx.graphics.getWidth() - containerWidth) / 2;
-        float containerY = (Gdx.graphics.getHeight() - containerHeight) / 2;
-        float lineY = containerY + containerHeight / 2;
 
         shapeRenderer.rect(containerX, lineY, containerWidth, 2);
         shapeRenderer.end();
@@ -120,6 +203,11 @@ public class MyGdxGame extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+
+        for(Texture texture :numberTextures){
+            texture.dispose();
+        }
+
         batch.dispose();
         shapeRenderer.dispose();
         backgroundTexture.dispose();
@@ -155,7 +243,7 @@ public class MyGdxGame extends ApplicationAdapter {
         batch.draw(image3Texture, containerX - 30 + 2 * containerWidth / 3, containerY - 40);
         batch.end();
 
-        if (Gdx.input.isTouched()) {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             float touchX = Gdx.input.getX();
             float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
