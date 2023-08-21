@@ -29,8 +29,11 @@ public class MyGdxGame extends ApplicationAdapter {
 
     List<Texture> numberTextures;
 
+    Texture targetFruit;
+    List<Texture> otherFruits;
 
-    boolean isShuffled = false;
+    boolean isDigitsShuffled = false;
+    boolean isFruitsShuffled = false;
     int countOfTrueAnswer = 0;
 
     int testCount = 0;
@@ -51,6 +54,12 @@ public class MyGdxGame extends ApplicationAdapter {
         image2Texture = new Texture("right1.png");
         image3Texture = new Texture("right2.png");
 
+
+        targetFruit = new Texture("apple.png");
+
+        otherFruits = new ArrayList<>();
+
+        setFruits();
 
         numberTextures = new ArrayList<>();
 
@@ -80,6 +89,8 @@ public class MyGdxGame extends ApplicationAdapter {
             doTest1();
         } else if(isTesting && testCount == 2){
             doTest2();
+        } else if(isTesting && testCount == 3){
+            doTest3();
         }
 
         else {
@@ -109,7 +120,10 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private final ArrayList<Texture> collectedTextures = new ArrayList<>(); // Список для сохранения порядка нажатий
 
-    private void doTest2() {
+
+    private final List<Texture> collectedFruits = new ArrayList<>(); // List to store collected fruit textures
+
+    private void doTest3() {
         setBackgroundImage();
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -118,6 +132,110 @@ public class MyGdxGame extends ApplicationAdapter {
 
         setContainer();
 
+        if (!isFruitsShuffled) {
+            Collections.shuffle(otherFruits);
+            isFruitsShuffled = true;
+        }
+
+        if (collectedFruits.size() == 7) {
+            boolean allApples = true;
+
+            for (Texture texture : collectedFruits) {
+                String textureName = texture.toString();
+                if (!textureName.equals("apple.png")) {
+                    allApples = false;
+                    collectedFruits.clear();
+                    isFruitsShuffled = false;
+                    otherFruits.clear();
+                    setFruits();
+                    break;
+                }
+            }
+            if (allApples) {
+                isFruitsShuffled = false;
+                testCount = 4;
+                collectedFruits.clear();
+                otherFruits.clear();
+                setFruits();
+            }
+        }
+
+
+        float textureWidth = containerWidth / 7;
+        float textureHeight = containerHeight / 7;
+
+        batch.begin();
+
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 7; col++) {
+                int index = row * 7 + col;
+                if (index < otherFruits.size()) {
+                    Texture texture = otherFruits.get(index);
+                    float textureX = containerX + col * textureWidth;
+                    float textureY = containerY + row * textureHeight + 10;
+                    batch.draw(texture, textureX + 50, textureY, 51, 51);
+                }
+            }
+        }
+
+        // Draw targetFruit texture at the center on top of the horizontal line
+        float targetFruitX = containerX + (containerWidth - textureWidth) / 2;
+        float targetFruitY = lineY + containerHeight / 2;
+        batch.draw(targetFruit, targetFruitX, targetFruitY - 300, textureWidth, textureHeight);
+
+        batch.end();
+
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // Handle touch input
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float touchX = Gdx.input.getX();
+            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            int touchedFruitIndex = (int) ((touchX - containerX) / textureWidth);
+            int rowIndex = (int) ((touchY - containerY) / (textureHeight + 10));
+
+            int indexToRemove = rowIndex * 7 + touchedFruitIndex;
+            if (indexToRemove >= 0 && indexToRemove < otherFruits.size()) {
+                Texture removedTexture = otherFruits.remove(indexToRemove);
+                collectedFruits.add(removedTexture);
+            }
+
+        }
+
+
+
+    }
+
+
+
+
+    private void setFruits(){
+        for (int i = 0; i < 7; i++) {
+            otherFruits.add(new Texture("apple.png"));
+        }
+        for (int i = 0; i < 7; i++) {
+            otherFruits.add(new Texture("banana.png"));
+        }
+        for (int i = 0; i < 7; i++) {
+            otherFruits.add(new Texture("carrot.png"));
+        }
+        for (int i = 0; i < 7; i++) {
+            otherFruits.add(new Texture("orange.png"));
+        }
+    }
+
+    private void doTest2() {
+        setBackgroundImage();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0, 0, 0, 1);
+        setContainer();
+
+
+
+
         if(collectedTextures.size() == 10){
             boolean isCorrect = true;
             int counter = 1;
@@ -125,25 +243,24 @@ public class MyGdxGame extends ApplicationAdapter {
                 int i = Integer.parseInt(texture.toString().replace(".png", ""));
                 System.out.println(counter +":" + i);
                 if(i != counter){
-                    System.out.println("false"+collectedTextures);
                     collectedTextures.clear();
-                    isShuffled = false;
+                    isDigitsShuffled = false;
                     isCorrect = false;
                     break;
                 }
                 counter++;
             }
             if(isCorrect){
-                System.out.println("true"+collectedTextures);
                 testCount = 3;
+                collectedTextures.clear();
             }
         }
 
         float numberSpacing = containerWidth / 10;
 
-        if(!isShuffled){
+        if(!isDigitsShuffled){
             Collections.shuffle(numberTextures);
-            isShuffled = true;
+            isDigitsShuffled = true;
         }
         // Отображение цифр внизу горизонтальной линии
         batch.begin();
@@ -168,9 +285,6 @@ public class MyGdxGame extends ApplicationAdapter {
             }
         }
 
-        if (collectedTextures.size() == 10) {
-            System.out.println("Collected textures: " + collectedTextures);
-        }
         // Отображение собранных цифр сверху горизонтальной линии
         batch.begin();
         float offsetX = containerX;
