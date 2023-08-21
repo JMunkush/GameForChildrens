@@ -8,12 +8,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import static io.munkush.app.Container.*;
+
+
 public class MyGdxGame extends ApplicationAdapter {
-    static float containerWidth;
-    static float containerHeight;
-    static float containerX;
-    static float containerY;
-    static float lineY = containerY + containerHeight / 2;
+
+
     static Texture backgroundTexture;
     Texture startButtonTexture;
 
@@ -21,14 +21,18 @@ public class MyGdxGame extends ApplicationAdapter {
     static ShapeRenderer shapeRenderer;
 
 
-    int countOfTrueAnswer = 0;
+    static int countOfFalseAnswer = 0;
 
     public static int testCount = 0;
-    boolean isTesting = false;
+    static boolean isTesting = false;
+    static boolean isEnded = false;
     Test1 test1;
     Test2 test2;
     Test3 test3;
     Test4 test4;
+    Test5 test5;
+
+    Result result;
 
     @Override
     public void create() {
@@ -37,15 +41,17 @@ public class MyGdxGame extends ApplicationAdapter {
         test2 = new Test2();
         test3 = new Test3();
         test4 = new Test4();
+        test5 = new Test5();
+        result = new Result();
 
         initContainerFields();
-        setupUI();
 
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
         backgroundTexture = new Texture("background.jpg");
         startButtonTexture = new Texture("start.png");
 
+        setupUI();
     }
 
 
@@ -57,7 +63,7 @@ public class MyGdxGame extends ApplicationAdapter {
         ScreenUtils.clear(1, 1, 1, 1);
 
         if (isTesting && testCount == 1) {
-            test1.render(batch, shapeRenderer);
+            test1.render(batch);
         } else if(isTesting && testCount == 2){
             test2.render(batch);
         } else if(isTesting && testCount == 3){
@@ -65,7 +71,9 @@ public class MyGdxGame extends ApplicationAdapter {
         } else if(isTesting && testCount == 4){
             test4.render(batch);
         } else if(isTesting && testCount == 5){
-
+            test5.render(batch);
+        } else if(isEnded){
+            result.render(batch);
         }
 
         else {
@@ -100,6 +108,8 @@ public class MyGdxGame extends ApplicationAdapter {
         test1.dispose();
         test2.dispose();
         test3.dispose();
+        test4.dispose();
+        test5.dispose();
 
         batch.dispose();
         shapeRenderer.dispose();
@@ -117,7 +127,7 @@ public class MyGdxGame extends ApplicationAdapter {
     }
 
 
-    private static void setContainer() {
+    static void setContainer() {
         shapeRenderer.rect(containerX, lineY, containerWidth, 2);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);

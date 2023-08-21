@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.munkush.app.Container.*;
 import static io.munkush.app.MyGdxGame.*;
 
 public class Test4 {
@@ -36,6 +37,7 @@ public class Test4 {
             int i = 2;
             for (Texture texture : collectedRep) {
                 if (!texture.toString().equals("b" + i++ + ".png")) {
+                    countOfFalseAnswer++;
                     isCorrect = false;
                     isRepShuffled = false;
                     collectedRep.clear();

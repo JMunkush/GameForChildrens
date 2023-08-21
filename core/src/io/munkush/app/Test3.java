@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.munkush.app.Container.*;
 import static io.munkush.app.MyGdxGame.*;
 
 public class Test3 {
@@ -55,6 +56,7 @@ public class Test3 {
             for (Texture texture : collectedFruits) {
                 String textureName = texture.toString();
                 if (!textureName.equals("apple.png")) {
+                    countOfFalseAnswer++;
                     allApples = false;
                     collectedFruits.clear();
                     isFruitsShuffled = false;
